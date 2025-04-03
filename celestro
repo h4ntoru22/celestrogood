@@ -1,0 +1,171 @@
+local Rayfield = loadstring(game:HttpGet('https://[Log in to view URL]'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "Celestro Hub",
+   LoadingTitle = "Celestro Hub",
+   LoadingSubtitle = "by Celestro Hub",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = nil,
+      FileName = "Celestro Hub"
+   },
+   Discord = {
+      Enabled = false,
+      Invite = "noinvitelink",
+      RememberJoins = true
+   },
+   KeySystem = false
+})
+
+local Tab = Window:CreateTab("Хитбокс", nil) 
+local Section = Tab:CreateSection("Настройки хитбокса")
+
+-- Чекбокс для включения/выключения хитбокса
+local hitboxEnabled = false
+local CheckBox = Tab:CreateToggle({
+   Name = "Включить хитбокс",
+   CurrentValue = false,
+   Flag = "HitboxToggle",
+   Callback = function(Value)
+      hitboxEnabled = Value
+      updateHitbox()
+   end,
+})
+
+-- Переменные для размеров хитбокса
+local hitboxSize = Vector3.new(2, 2, 2)
+local transparency = 0.5
+
+-- Функция плавного изменения хитбокса
+function updateHitbox()
+   if not hitboxEnabled then
+      resetHitbox()
+      return
+   end
+
+   local character = game.Players.LocalPlayer.Character
+   if character then
+      for _, part in pairs(character:GetChildren()) do
+         if part:IsA("BasePart") then
+            task.spawn(function()
+               for i = part.Size.X, hitboxSize.X, 0.1 do
+                  part.Size = Vector3.new(i, i, i)
+                  part.Transparency = transparency
+                  wait(0.05)
+               end
+            end)
+         end
+      end
+   end
+end
+
+-- Слайдеры для изменения X, Y, Z
+local SliderX = Tab:CreateSlider({
+   Name = "Размер X",
+   Range = {2.0, 6.0},
+   Increment = 0.1,
+   Suffix = "X",
+   CurrentValue = 2.0,
+   Flag = "HitboxX",
+   Callback = function(Value)
+      hitboxSize = Vector3.new(Value, hitboxSize.Y, hitboxSize.Z)
+      updateHitbox()
+   end,
+})
+
+local SliderY = Tab:CreateSlider({
+   Name = "Размер Y",
+   Range = {2.0, 6.0},
+   Increment = 0.1,
+   Suffix = "Y",
+   CurrentValue = 2.0,
+   Flag = "HitboxY",
+   Callback = function(Value)
+      hitboxSize = Vector3.new(hitboxSize.X, Value, hitboxSize.Z)
+      updateHitbox()
+   end,
+})
+
+local SliderZ = Tab:CreateSlider({
+   Name = "Размер Z",
+   Range = {2.0, 6.0},
+   Increment = 0.1,
+   Suffix = "Z",
+   CurrentValue = 2.0,
+   Flag = "HitboxZ",
+   Callback = function(Value)
+      hitboxSize = Vector3.new(hitboxSize.X, hitboxSize.Y, Value)
+      updateHitbox()
+   end,
+})
+
+-- Слайдер для прозрачности хитбокса
+local TransparencySlider = Tab:CreateSlider({
+   Name = "Прозрачность",
+   Range = {0.0, 1.0},
+   Increment = 0.1,
+   Suffix = "",
+   CurrentValue = 0.5,
+   Flag = "HitboxTransparency",
+   Callback = function(Value)
+      transparency = Value
+      updateHitbox()
+   end,
+})
+
+-- Функция сброса хитбокса
+function resetHitbox()
+   local character = game.Players.LocalPlayer.Character
+   if character then
+      for _, part in pairs(character:GetChildren()) do
+         if part:IsA("BasePart") then
+            part.Size = Vector3.new(2, 2, 1) -- стандартный размер
+            part.Transparency = 0 -- обычная видимость
+         end
+      end
+   end
+end
+
+-- Анти-античит (скрывает изменения)
+local function antiAntiCheat()
+   local mt = getrawmetatable(game)
+   setreadonly(mt, false)
+   local oldIndex = mt.__index
+
+   mt.__index = newcclosure(function(t, k)
+      if tostring(k) == "Size" or tostring(k) == "Transparency" then
+         return Vector3.new(2, 2, 1) -- Возвращаем стандартный размер, чтобы обойти античит
+      end
+      return oldIndex(t, k)
+   end)
+end
+
+antiAntiCheat()
+
+-- Авто-антибан (выход из игры при бане)
+game:GetService("Players").LocalPlayer.OnTeleport:Connect(function(State)
+   if State == Enum.TeleportState.Failed then
+      game:Shutdown() -- Закрывает игру, если система пытается забанить
+   end
+end)
+
+-- Убирает хитбокс после 2 минут использования
+task.delay(120, function()
+   hitboxEnabled = false
+   updateHitbox()
+end)
+
+Rayfield:Notify({
+   Title = "Защита активирована",
+   Content = "Анти-античит включен, хитбокс изменяется плавно",
+   Duration = 6.5,
+   Image = nil,
+   Actions = {
+      Ignore = {
+         Name = "Окей",
+         Callback = function()
+         print("Пользователь подтвердил")
+      end
+   },
+},
+})
